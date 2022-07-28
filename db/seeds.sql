@@ -4,7 +4,7 @@ values  ("Sales"),
         ("Marketing");
 
 
-insert into role (title, salary, department)
+insert into roles (title, salary, department)
 values  ("Sales Executive", 130000, 1 ),
         ("Salesperson", 80000, 1 ),
         ("Tech Lead", 180000, 2 ),
@@ -13,7 +13,12 @@ values  ("Sales Executive", 130000, 1 ),
         ("Promotions Assistant", 70000, 3 );
 
 
--- insert into manager (first_name, last_name, role)
+-- insert into managers (first_name, last_name, role)
+-- values  ("Sean", "Brown", "Sales Executive"),
+--         ("Tao", "Jin", "Tech Lead"),
+--         ("Tanya", "Pratt", "Project Manager"),
+
+-- insert into employees (first_name, last_name, role)
 -- values  ("Sean", "Brown", "Sales Executive"),
 --         ("Mya", "Vasquez", "Salesperson"),
 --         ("Tao", "Jin", "Tech Lead"),

@@ -8,7 +8,7 @@ create table departments (
     dept_name VARCHAR(40) NOT NULL
 );
 
-create table role (
+create table roles (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(40) NOT NULL,
     salary DECIMAL,
@@ -17,13 +17,13 @@ create table role (
     REFERENCES departments(id) 
 );
 
-create table manager (
+create table managers (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(30) NOT NULL,
     last_name VARCHAR(30) NOT NULL, 
     role INT,
     FOREIGN KEY (role)
-    REFERENCES role(id)
+    REFERENCES roles(id)
 );
 
 create table employee (
@@ -33,7 +33,7 @@ create table employee (
     manager INT, 
     role INT, 
     FOREIGN KEY (manager)
-    REFERENCES manager(id),
+    REFERENCES managers(id),
     FOREIGN KEY (role)
-    REFERENCES role(id) 
+    REFERENCES roles(id) 
 );

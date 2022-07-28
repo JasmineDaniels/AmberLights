@@ -1,8 +1,9 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cTable = require('console.table')
-//const main_menu = require('./prompts/main-menu')
+//const queries = require('./prompts/queries')
 //const table = cTable.getTable()
+const inquirer = require('inquirer')
 
 const PORT = process.env.PORT || 5001;
 const app = express();
@@ -10,7 +11,7 @@ const app = express();
 //middlewear
 app.use(express.urlencoded({ extended: false}))
 app.use(express.json())
-// static for 
+// static for main menu.js file ?
 
 // start server
 const db = mysql.createConnection({ //returns a js object 
@@ -20,15 +21,79 @@ const db = mysql.createConnection({ //returns a js object
     database: 'employee_tracker'
 });
 
-//Get All Depeartments
-db.query('Select * from departments', (err, data) => { // if data JSON.stringify(data) res.json(data)
-    err ? console.error(err) : console.table(data)
-});
+const main_menu = () => {
+    inquirer.prompt([
+        {
+            type: 'checkbox',
+            message: 'What would you like to do?',
+            choices: ['View All Departments', 'View All Roles', 'View All Employees', 'Add Department', 'Add Role', 'Add Employee', 'Update Employee Role', 'Quit'],
+            name: 'MAIN',
+        },
+    ])
+    .then((answers) => {
 
-//Get All Roles
-db.query('Select * from role', (err, data) => { // if data JSON.stringify(data) res.json(data)
-    err ? console.error(err) : console.table(data)
-});
+
+        if (answers.MAIN == "View All Departments"){
+            // db.query('Select * from departments', (err, data) => { // if data JSON.stringify(data) res.json(data)
+            //     err ? console.error(err) : console.table(data)
+            // })
+            getDepartments()
+        }
+
+        if (answers.MAIN == "View All Roles"){
+            db.query('Select * from roles', (err, data) => { // if data JSON.stringify(data) res.json(data)
+                err ? console.error(err) : console.table(data)
+            });
+        }
+
+        if (answers.MAIN == "View All Employees"){
+            db.query('Select * from employees', (err, data) => { // if data JSON.stringify(data) res.json(data)
+                err ? console.error(err) : console.table(data)
+            });
+        }
+
+        if (answers.MAIN == "Add Department"){
+            departmentPrompts()
+        }
+    })
+    .catch(() => {
+
+    })
+
+}
+main_menu()
+
+const getDepartments = () => {
+    return new Promise((resolve, reject) => {
+        db.query('Select * from departments', (err, data) => { // if data JSON.stringify(data) res.json(data)
+            err ? reject(console.error(err)) : resolve(data)
+        })
+    })
+    .then((data) => {
+        console.table(data)
+    })
+    .then(() => { //too fast
+        main_menu()
+    })
+}
+
+const departmentPrompts = () => {
+    inquirer.prompt([
+        {
+            type: 'input',
+            message: 'What is the name of the department?',
+            name: 'DEPT'
+        }
+    ])
+    .then((answers) => {
+        db.query(`insert into departments (dept_name) values ("${answers.DEPT}")`, (err, data) => { // values 
+            err ? console.error(err) : console.table(data)
+        });
+    })
+    .then(() => {
+        console.table(`Department Successfully Added`)
+    })
+}
 
 
 // start inquirer menu 
