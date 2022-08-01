@@ -1,6 +1,3 @@
-update employee
-set first_name = 
-set last_name =
-set role =
-set employee_manager = 
+update employees
+set role = "Account Manager"
 where id = ?
