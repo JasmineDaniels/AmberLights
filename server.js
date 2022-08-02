@@ -7,7 +7,7 @@ const inquirer = require('inquirer');
 const { error } = require('console');
 
 const PORT = process.env.PORT || 5001;
-const app = express();
+//const app = express();
 
 //middlewear
 // app.use(express.urlencoded({ extended: false}))
@@ -181,64 +181,68 @@ const addRole = async () => {
 // Update Employees ========================================================
 
 const getEmployeeNames = () => {
-   return db.promise().query(`Select first_name, last_name from employees`)
+   return db.promise().query(`Select first_name, last_name, id from employees`) // id
 }
 
 const getAllRoles = () => {
-    return new Promise((resolve, reject) => {
-        db.query('Select * from roles', (err, data) => { 
-            err ? reject(console.error(err)) : resolve(data)
-        });
-    })
-    
+    return db.promise().query('Select id, title from roles')
 }
 
 const employeePrompts = async () => {
     try {
         const employeesArr = await getEmployeeNames()
-        const { ...allEmployees } = employeesArr
+        const [ employees ] = employeesArr
+
+        const filteredEmp = employees.map((emp) => {
+            return {
+                name: `${emp.first_name} ${emp.last_name}`,
+                value: emp.id
+            }
+        })
     
-        const rolesArr = await getRoles()
-        const { ...allRoles } = rolesArr
+        const [ roles ] = await getAllRoles()
+        const filteredRoles = roles.map((role) => {
+            return {
+                name: role.title,
+                value: role.id
+            }
+        })
             
-        //const updateEmployee = getAnswers(allEmployees, allRoles)
-        if (allEmployees && allRoles){
-            inquirer.prompt([
-                {
-                    type: 'checkbox',
-                    message: 'Which Employee would you like to update?',
-                    choices: allEmployees,
-                    name: 'EMPLOYEE1'
-                },
-                {
-                    type: 'checkbox',
-                    message: `Which role would you like to assign to selected employee?`,
-                    choices: allRoles,
-                    name: 'EMPLOYEE2'
-                },
-            ])
-            .then((answers) => {
-                const selectedEmp = db.query(`select * from employees where first_name, last_name = "${answers.EMPLOYEE1}"`, (err, data) => {
-                    err ? reject(console.table(err)) : resolve(data)
-                });
-            
-                updateAnswers(answers, selectedEmp)
-            })
+        const answers = await inquirer.prompt([
+            {
+                type: 'checkbox',
+                message: 'Which Employee would you like to update?',
+                choices: filteredEmp,
+                name: 'EMPLOYEE1'
+            },
+            {
+                type: 'checkbox',
+                message: `Which role would you like to assign to selected employee?`,
+                choices: filteredRoles,
+                name: 'EMPLOYEE2'
+            },
+        ])
+
+        const updatedEmp = await db.promise().query(`update employees set role_id = "${answers.EMPLOYEE2}" where id = "${answers.EMPLOYEE1}"`)
+        if (updatedEmp) {
+            const newEmpList = await updateAnswers()
+            console.table(`Successfully Updated Employee`)
+            main_menu()
         }
-            
-        } catch (error) {
-            console.log(error)
-        }
+    } 
+    catch (error) {
+        console.log(error)
     }
+}
     
-    const updateAnswers = (answers, selectedEmp) => {
+    const updateAnswers = () => {
         return new Promise((resolve, reject) => {
-            db.query(`update employees set role = "${answers.EMPLOYEE2}" where first_name, last_name = ?`, selectedEmp, (err, data) => {
+            db.query(`select employees.first_name, employees.last_name, roles.title from employees inner join roles on employees.role_id = roles.id`, (err, data) => {
                 err ? reject(console.table(err)) : resolve(console.table(data))
             });
         })
     }
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
-});
+// app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT}`)
+// });
