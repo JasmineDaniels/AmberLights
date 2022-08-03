@@ -1,21 +1,12 @@
-const express = require('express');
 const mysql = require('mysql2');
 const cTable = require('console.table')
-//const queries = require('./prompts/queries')
-//const table = cTable.getTable()
 const inquirer = require('inquirer');
-const { error } = require('console');
+//const { error } = require('console');
 
 const PORT = process.env.PORT || 5001;
-//const app = express();
-
-//middlewear
-// app.use(express.urlencoded({ extended: false}))
-// app.use(express.json())
-// static for main menu.js file ?
 
 // start server
-const db = mysql.createConnection({ //returns a js object 
+const db = mysql.createConnection({ 
     host: 'localhost',
     user: 'root',
     password: 'docker',
@@ -54,7 +45,7 @@ const main_menu = () => {
         }
 
         if (answers.MAIN == "Add Employee"){
-            
+            addEmployee()
         }
 
         if (answers.MAIN == "Update Employee Role"){
@@ -184,7 +175,7 @@ const getEmployeeNames = () => {
    return db.promise().query(`Select first_name, last_name, id from employees`) // id
 }
 
-const getAllRoles = () => {
+const getRoleTitle = () => {
     return db.promise().query('Select id, title from roles')
 }
 
@@ -200,7 +191,7 @@ const employeePrompts = async () => {
             }
         })
     
-        const [ roles ] = await getAllRoles()
+        const [ roles ] = await getRoleTitle()
         const filteredRoles = roles.map((role) => {
             return {
                 name: role.title,
@@ -235,14 +226,80 @@ const employeePrompts = async () => {
     }
 }
     
-    const updateAnswers = () => {
-        return new Promise((resolve, reject) => {
-            db.query(`select employees.first_name, employees.last_name, roles.title from employees inner join roles on employees.role_id = roles.id`, (err, data) => {
-                err ? reject(console.table(err)) : resolve(console.table(data))
-            });
-        })
-    }
+const updateAnswers = () => {
+    return new Promise((resolve, reject) => {
+        db.query(`select employees.first_name, employees.last_name, roles.title from employees inner join roles on employees.role_id = roles.id`, (err, data) => {
+            err ? reject(console.table(err)) : resolve(console.table(data))
+        });
+    })
+}
 
-// app.listen(PORT, () => {
-//     console.log(`Server running on port ${PORT}`)
-// });
+// Add Employee ===============================================================================================
+
+const getManagers = () => {
+    //return db.promise().query(`select managers.id as mgr_id, employees.id as role_id, employees.first_name, employees.last_name from employees inner join managers on employees.role_id = managers.role_id `)
+    return db.promise().query(`select managers.id as mgr_id, employees.id as role_id, employees.first_name, employees.last_name from employees right outer join managers on employees.role_id = managers.role_id`)
+}
+
+const addEmployee = async () => {
+    try {
+        const rolesArr = await getRoleTitle()
+        const [ roles ] = rolesArr
+        const filteredRoles = roles.map((role) => {
+            return {
+                name: role.title,
+                value: role.id
+            }
+        })
+
+        const [ managers ] = await getManagers()
+        const filteredManagers = managers.map((mgr) => {
+            return {
+                name: `${mgr.first_name} ${mgr.last_name}`,
+                //value: mgr.id
+                value: mgr.mgr_id
+                //value: mgr.role_id
+            }
+        })
+
+        const answers = await inquirer.prompt([
+            {
+                type: 'input',
+                message: 'What is the employees first name?',
+                name: 'EMPLOYEE1'
+            },
+            {
+                type: 'input',
+                message: 'What is the employees last name?',
+                name: 'EMPLOYEE2'
+            },
+            {
+                type: 'checkbox',
+                message: 'What what is the employees role?',
+                choices: filteredRoles, 
+                name: 'EMPLOYEE3'
+            },
+            {
+                type: 'checkbox',
+                message: 'Who is the employees manager?',
+                choices: filteredManagers, 
+                name: 'EMPLOYEE4'
+            }
+        ])
+
+        const newEmployee = await db.promise().query(`insert into employees (first_name, last_name, manager_id, role_id) values ("${answers.EMPLOYEE1}", "${answers.EMPLOYEE2}", ${answers.EMPLOYEE4}, ${answers.EMPLOYEE3})`)
+        
+        // show new employee
+        if (newEmployee){
+            console.table(`Employee successfully added to database`)
+            const updatedEmployee = await updateAnswers()
+            if (updatedEmployee){
+                main_menu()
+            }
+        } 
+    } catch (error) {
+        console.table(error)
+    }
+}
+    
+
