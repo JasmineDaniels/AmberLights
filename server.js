@@ -1,9 +1,6 @@
 const mysql = require('mysql2');
 const cTable = require('console.table')
 const inquirer = require('inquirer');
-//const { error } = require('console');
-
-const PORT = process.env.PORT || 5001;
 
 // start server
 const db = mysql.createConnection({ 
@@ -50,19 +47,23 @@ const main_menu = () => {
 
         if (answers.MAIN == "Update Employee Role"){
             employeePrompts()
-            
         }
 
         if (answers.MAIN == "Quit"){
             return;
         }
     })
-    .catch(() => {
-
+    .catch((error) => {
+        console.log(error)
     })
 
 }
-main_menu()
+
+const welcomeNote =  () => {
+    console.log('\x1b[33m%s\x1b[0m', `Welcome to Employee Tracker`)
+    main_menu()
+}
+welcomeNote()
 
 const getDepartments = () => {
     return new Promise((resolve, reject) => {
@@ -76,25 +77,7 @@ const getDepartments = () => {
     .then(() => { 
         main_menu()
     })
-}
-
-const addDepartment = () => {
-    inquirer.prompt([
-        {
-            type: 'input',
-            message: 'What is the name of the department?',
-            name: 'DEPT'
-        }
-    ])
-    .then((answers) => {
-        db.query(`insert into departments (dept_name) values ("${answers.DEPT}")`, (err, data) => { // values 
-            err ? console.error(err) : console.table(data)
-        });
-    })
-    .then(() => getDepartments())
-    .then(() => {
-        console.table(`Department Successfully Added`)
-    })
+    .catch((error) => console.log(error))
 }
 
 const getRoles = () => {
@@ -110,7 +93,7 @@ const getRoles = () => {
 
 const getEmployees = () => {
     return new Promise((resolve, reject) => {
-        db.query('Select * from employees', (err, data) => { 
+        db.query('select employees.first_name, employees.last_name, roles.title from employees inner join roles on employees.role_id = roles.id', (err, data) => { 
             err ? reject(console.error(err)) : resolve(console.table(data))
         });
     })
@@ -119,7 +102,26 @@ const getEmployees = () => {
     })
 }
 
-// Add Roles ==================================================================
+// Add Department =========================================================================================
+const addDepartment = () => {
+    inquirer.prompt([
+        {
+            type: 'input',
+            message: 'What is the name of the department?',
+            name: 'DEPT'
+        }
+    ])
+    .then((answers) => {
+        db.query(`insert into departments (dept_name) values ("${answers.DEPT}")`)
+    })
+    .then(() => {
+        console.table(`Department Successfully Added`)
+    })
+    .then(() => getDepartments())
+    .catch((error) => console.log(error))
+}
+
+// Add Roles ==============================================================================================
 const deptList = () => {
     return db.promise().query(`select * from departments`)
 }
@@ -127,7 +129,6 @@ const deptList = () => {
 const addRole = async () => {
     try {
         const [depts] = await deptList()
-        
         const filteredDepts = depts.map((dp) => {
             return {
                 name: dp.dept_name,
@@ -161,16 +162,14 @@ const addRole = async () => {
             ])
 
         const newRole = await db.promise().query(`insert into roles (title, salary, dept_id) values ('${answers.ROLE1}', ${answers.ROLE2}, ${answers.ROLE3})`)
-
-        main_menu()
+        const allRoles = await getRoles()
 
     } catch (error) {
-        console.log(error)
+        console.table(error)
     }
 }
 
-// Update Employees ========================================================
-
+// Update Employees =======================================================================================
 const getEmployeeNames = () => {
    return db.promise().query(`Select first_name, last_name, id from employees`) // id
 }
@@ -180,10 +179,9 @@ const getRoleTitle = () => {
 }
 
 const employeePrompts = async () => {
-    try {
+    try { 
         const employeesArr = await getEmployeeNames()
         const [ employees ] = employeesArr
-
         const filteredEmp = employees.map((emp) => {
             return {
                 name: `${emp.first_name} ${emp.last_name}`,
@@ -215,6 +213,7 @@ const employeePrompts = async () => {
         ])
 
         const updatedEmp = await db.promise().query(`update employees set role_id = "${answers.EMPLOYEE2}" where id = "${answers.EMPLOYEE1}"`)
+        //show employees
         if (updatedEmp) {
             const newEmpList = await updateAnswers()
             console.table(`Successfully Updated Employee`)
@@ -237,7 +236,6 @@ const updateAnswers = () => {
 // Add Employee ===============================================================================================
 
 const getManagers = () => {
-    //return db.promise().query(`select managers.id as mgr_id, employees.id as role_id, employees.first_name, employees.last_name from employees inner join managers on employees.role_id = managers.role_id `)
     return db.promise().query(`select managers.id as mgr_id, employees.id as role_id, employees.first_name, employees.last_name from employees right outer join managers on employees.role_id = managers.role_id`)
 }
 
@@ -256,9 +254,7 @@ const addEmployee = async () => {
         const filteredManagers = managers.map((mgr) => {
             return {
                 name: `${mgr.first_name} ${mgr.last_name}`,
-                //value: mgr.id
                 value: mgr.mgr_id
-                //value: mgr.role_id
             }
         })
 
@@ -293,9 +289,8 @@ const addEmployee = async () => {
         if (newEmployee){
             console.table(`Employee successfully added to database`)
             const updatedEmployee = await updateAnswers()
-            if (updatedEmployee){
-                main_menu()
-            }
+            main_menu()
+            
         } 
     } catch (error) {
         console.table(error)
