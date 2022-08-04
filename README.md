@@ -29,7 +29,12 @@ npm start
 
 ## Go Check us out
 
+## Demo Image: 
+![Employee Tracker](./img/EmployeeTracker.png)
+
 ### Demo Link:
+
+[Employee Tracker Demo](https://drive.google.com/file/d/1ws7rOwqFl18QLitTsxxmpzUIsrBXgwD0/view)
 
 ## License
 

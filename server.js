@@ -2,7 +2,7 @@ const mysql = require('mysql2');
 const cTable = require('console.table')
 const inquirer = require('inquirer');
 
-// start server
+//Database Connection
 const db = mysql.createConnection({ 
     host: 'localhost',
     user: 'root',
@@ -115,7 +115,7 @@ const addDepartment = () => {
         db.query(`insert into departments (dept_name) values ("${answers.DEPT}")`)
     })
     .then(() => {
-        console.table(`Department Successfully Added`)
+        console.log('\x1b[33m%s\x1b[0m', `Department Successfully Added`)
     })
     .then(() => getDepartments())
     .catch((error) => console.log(error))
@@ -162,6 +162,7 @@ const addRole = async () => {
             ])
 
         const newRole = await db.promise().query(`insert into roles (title, salary, dept_id) values ('${answers.ROLE1}', ${answers.ROLE2}, ${answers.ROLE3})`)
+        console.log('\x1b[33m%s\x1b[0m', `Successfully added Role to the Database`)
         const allRoles = await getRoles()
 
     } catch (error) {
@@ -181,7 +182,10 @@ const getRoleTitle = () => {
 const employeePrompts = async () => {
     try { 
         const employeesArr = await getEmployeeNames()
+        //destructure nested array
         const [ employees ] = employeesArr
+        //create a new array of employees
+        //with proper formatting for inquirer list
         const filteredEmp = employees.map((emp) => {
             return {
                 name: `${emp.first_name} ${emp.last_name}`,
@@ -216,7 +220,7 @@ const employeePrompts = async () => {
         //show employees
         if (updatedEmp) {
             const newEmpList = await updateAnswers()
-            console.table(`Successfully Updated Employee`)
+            console.log('\x1b[33m%s\x1b[0m', `Successfully Updated Employee`)
             main_menu()
         }
     } 
@@ -287,7 +291,7 @@ const addEmployee = async () => {
         
         // show new employee
         if (newEmployee){
-            console.table(`Employee successfully added to database`)
+            console.log('\x1b[33m%s\x1b[0m', `Employee successfully added to database`)
             const updatedEmployee = await updateAnswers()
             main_menu()
             
